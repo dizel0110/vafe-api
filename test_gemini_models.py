@@ -1,0 +1,17 @@
+"""
+Проверка доступных Gemini моделей
+"""
+
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+load_dotenv('.env.local')
+api_key = os.getenv('GEMINI_API_KEY')
+
+genai.configure(api_key=api_key)
+
+print("📋 Доступные модели:\n")
+for model in genai.list_models():
+    if 'generateContent' in model.supported_generation_methods:
+        print(f"  • {model.name}")

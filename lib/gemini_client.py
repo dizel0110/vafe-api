@@ -18,7 +18,7 @@ class GeminiClient:
     
     def __init__(self, config: Dict):
         self.config = config
-        self.model_name = config.get('model', 'gemini-pro')
+        self.model_name = config.get('model', 'gemini-2.5-flash')
         
         # Получение API ключа
         api_key_env = config.get('api_key_env', 'GEMINI_API_KEY')

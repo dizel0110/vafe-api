@@ -1,10 +1,10 @@
 {
   "active": "gemini",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "providers": {
     "gemini": {
       "enabled": true,
-      "model": "gemini-pro",
+      "model": "gemini-2.5-flash",
       "api_key_env": "GEMINI_API_KEY",
       "rate_limit": {
         "requests_per_minute": 60,
