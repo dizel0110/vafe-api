@@ -56,27 +56,28 @@ class ProviderRouter:
             return LocalClient(config)
         return None
     
-    async def generate(self, prompt: str, context: list = None, **kwargs) -> Dict:
+    async def generate(self, prompt: str, context: list = None, mode: str = "general", **kwargs) -> Dict:
         """
         Генерация ответа через активного провайдера
-        
+
         Args:
             prompt: Запрос пользователя
             context: Контекст из RAG
+            mode: Режим (vafe, about, general)
             **kwargs: Дополнительные параметры
-        
+
         Returns:
             Dict с ответом и метаданными
         """
         provider_name = self.active_provider
-        
+
         if provider_name not in self.clients:
             raise ValueError(f"Provider {provider_name} not initialized")
-        
+
         client = self.clients[provider_name]
-        
+
         try:
-            response = await client.generate(prompt, context, **kwargs)
+            response = await client.generate(prompt, context, mode=mode, **kwargs)
             return {
                 'answer': response['text'],
                 'provider': provider_name,
@@ -87,24 +88,24 @@ class ProviderRouter:
         except Exception as e:
             # Fallback к другому провайдеру
             if self.config.get('fallback', {}).get('enabled', False):
-                return await self._fallback_generate(prompt, context, **kwargs)
+                return await self._fallback_generate(prompt, context, mode=mode, **kwargs)
             raise e
     
-    async def _fallback_generate(self, prompt: str, context: list = None, **kwargs) -> Dict:
+    async def _fallback_generate(self, prompt: str, context: list = None, mode: str = "general", **kwargs) -> Dict:
         """Генерация через fallback провайдеры"""
         fallback_order = self.config['fallback'].get('order', [])
         retry_count = self.config['fallback'].get('retry_count', 3)
-        
+
         for provider_name in fallback_order:
             if provider_name == self.active_provider:
                 continue
-            
+
             if provider_name not in self.clients:
                 continue
-            
+
             try:
                 client = self.clients[provider_name]
-                response = await client.generate(prompt, context, **kwargs)
+                response = await client.generate(prompt, context, mode=mode, **kwargs)
                 return {
                     'answer': response['text'],
                     'provider': provider_name,
@@ -117,7 +118,7 @@ class ProviderRouter:
                 if retry_count <= 0:
                     raise e
                 continue
-        
+
         raise Exception("All providers failed")
     
     def get_active_provider(self) -> str:

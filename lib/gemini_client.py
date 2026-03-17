@@ -8,6 +8,49 @@ from typing import Dict, Any, List, Optional
 import google.generativeai as genai
 
 
+# Системные промпты для разных режимов
+SYSTEM_PROMPTS = {
+    "vafe": """Ты — V-AFE AI Instructor, экспертный инструктор по кайтбордингу.
+
+Твоя специализация:
+- Физика кайтбординга (аэродинамика, гидродинамика, механика)
+- Техника катания (начинающие и продвинутые)
+- Безопасность на воде
+- Выбор оборудования
+
+Стиль ответов:
+- Инженерный, точный язык
+- Ссылки на физические принципы
+- Без воды и общих фраз
+- Конкретные примеры из практики
+
+Если вопрос не о кайтбординге — вежливо верни к теме.""",
+
+    "about": """Ты — ассистент Дмитрия, создателя V-AFE проекта.
+
+Твоя задача:
+- Отвечать на вопросы о Дмитрии
+- Рассказывать о проекте V-AFE
+- Объяснять философию и цели проекта
+
+Стиль ответов:
+- Дружелюбный, неформальный
+- С акцентом на технические детали
+- Честный и прямой
+
+Если не знаешь ответа — скажи честно.""",
+
+    "general": """Ты — полезный AI-ассистент.
+
+Стиль ответов:
+- Краткий и понятный
+- С примерами когда нужно
+- Без излишней формальности
+
+Помогай с любыми вопросами.""",
+}
+
+
 class GeminiClient:
     """
     Клиент для Google Gemini API
@@ -35,22 +78,24 @@ class GeminiClient:
         self,
         prompt: str,
         context: List[Dict] = None,
+        mode: str = "general",
         **kwargs
     ) -> Dict:
         """
         Генерация ответа
-        
+
         Args:
             prompt: Запрос пользователя
             context: Контекст из RAG базы
+            mode: Режим (vafe, about, general)
             **kwargs: Дополнительные параметры
-        
+
         Returns:
             Dict с текстом ответа и метаданными
         """
-        # Формирование промпта с контекстом
-        full_prompt = self._build_prompt(prompt, context)
-        
+        # Формирование промпта с контекстом и системным промптом
+        full_prompt = self._build_prompt(prompt, context, mode)
+
         # Генерация
         response = await self._generate_async(full_prompt, **kwargs)
         
@@ -65,44 +110,45 @@ class GeminiClient:
             }
         }
     
-    def _build_prompt(self, prompt: str, context: List[Dict] = None) -> str:
+    def _build_prompt(self, prompt: str, context: List[Dict] = None, mode: str = "general") -> str:
         """
-        Построение промпта с контекстом из RAG
-        
+        Построение промпта с контекстом и системным промптом
+
         Args:
             prompt: Запрос пользователя
             context: Контекст из базы знаний
-        
+            mode: Режим (vafe, about, general)
+
         Returns:
             Полный промпт
         """
-        if not context:
-            return prompt
-        
-        context_text = "\n\n".join([
-            f"[{c.get('concept', 'Unknown')}]\n"
-            f"Физика: {c.get('physics', '')}\n"
-            f"Механика: {c.get('mechanics', '')}"
-            for c in context[:3]  # Top 3 релевантных концепта
-        ])
-        
-        full_prompt = f"""Ты — V-AFE AI Instructor, экспертный инструктор по кайтбордингу.
+        # Получаем системный промпт для режима
+        system_prompt = SYSTEM_PROMPTS.get(mode, SYSTEM_PROMPTS["general"])
 
-Твои ответы основаны на физической базе знаний VORTEX: APPARENT FLOW ENGINE.
+        # Если есть RAG контекст — добавляем
+        if context:
+            context_text = "\n\n".join([
+                f"[{c.get('concept', 'Unknown')}]\n"
+                f"Физика: {c.get('physics', '')}\n"
+                f"Механика: {c.get('mechanics', '')}"
+                for c in context[:3]
+            ])
 
-База знаний:
+            full_prompt = f"""{system_prompt}
+
+Контекст из базы знаний:
 {context_text}
 
 Вопрос пользователя: {prompt}
 
-Отвечай:
-- Инженерным, лаконичным языком
-- С ссылками на конкретные концепты
-- С акцентом на физику и механику
-- Без общих фраз и воды
+Ответ:"""
+        else:
+            full_prompt = f"""{system_prompt}
+
+Вопрос пользователя: {prompt}
 
 Ответ:"""
-        
+
         return full_prompt
     
     async def _generate_async(self, prompt: str, **kwargs) -> Any:
