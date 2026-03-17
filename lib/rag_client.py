@@ -1,22 +1,24 @@
 """
 V-AFE API — RAG Client
-Интеграция с vortex-afe для поиска по базе знаний
+Заглушка для RAG поиска
+
+Future: Интеграция с vortex-afe сервисом
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class RAGClient:
     """
-    Клиент для RAG поиска по базе знаний vortex-afe
+    RAG клиент-заглушка
 
-    Сейчас: Заглушка (возвращает пустой список)
-    Future: Интеграция с vortex-afe embeddings
+    Сейчас: Возвращает пустой список
+    Future: HTTP запрос к vortex-afe API
     """
 
     def __init__(self, endpoint: str = None):
-        self.endpoint = endpoint or "http://localhost:8000"
-        self.enabled = False  # Пока отключено
+        self.endpoint = endpoint
+        self.enabled = False
 
     async def search(
         self,
@@ -25,26 +27,14 @@ class RAGClient:
         top_k: int = 3
     ) -> List[Dict]:
         """
-        Поиск релевантных концептов в базе знаний
-
-        Args:
-            query: Запрос пользователя
-            mode: Режим (vafe, about, general)
-            top_k: Количество результатов
+        Поиск концептов (заглушка)
 
         Returns:
-            Список концептов с источниками
+            Пустой список (RAG отключён)
         """
         # TODO: Интеграция с vortex-afe
-        # Сейчас возвращаем пустой список
         return []
 
     async def sync_embeddings(self) -> bool:
-        """
-        Синхронизация embeddings с vortex-afe
-
-        Returns:
-            True если успешно
-        """
-        # TODO: Реализовать синхронизацию
+        """Синхронизация embeddings (заглушка)"""
         return False
