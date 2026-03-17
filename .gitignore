@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env.local
+.vercel
+*.egg-info/
+.internal/
+venv/
+.vscode/
+.idea/
+*.log
