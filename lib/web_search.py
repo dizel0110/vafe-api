@@ -1,15 +1,23 @@
 """
-Web Search via DuckDuckGo
+Web Search via Tavily AI
 Поиск источников для ответов Gemini
+
+Docs: https://docs.tavily.com/
+Free tier: 1000 requests/month
 """
 
-from duckduckgo_search import DDGS
+import os
 from typing import List, Dict
+
+try:
+    from tavily import TavilyClient
+except ImportError:
+    TavilyClient = None
 
 
 def search_web(query: str, max_results: int = 3) -> List[Dict[str, str]]:
     """
-    Поиск в интернете через DuckDuckGo
+    Поиск в интернете через Tavily AI
 
     Args:
         query: Поисковый запрос
@@ -18,28 +26,34 @@ def search_web(query: str, max_results: int = 3) -> List[Dict[str, str]]:
     Returns:
         Список источников: [{"title": "...", "url": "...", "snippet": "..."}]
     """
+    # Получаем API ключ
+    api_key = os.getenv("TAVILY_API_KEY")
+
+    if not api_key:
+        print("TAVILY_API_KEY not found, returning empty sources")
+        return []
+
+    if TavilyClient is None:
+        print("tavily-python not installed, returning empty sources")
+        return []
+
     try:
-        with DDGS(headers={"User-Agent": "Mozilla/5.0"}) as ddgs:
-            results = list(ddgs.text(query, max_results=max_results))
+        client = TavilyClient(api_key=api_key)
+        response = client.search(query, max_results=max_results)
 
         sources = []
-        for result in results[:max_results]:
+        for result in response.get("results", [])[:max_results]:
             sources.append({
                 "title": result.get("title", "No title"),
-                "url": result.get("href", ""),
-                "snippet": result.get("body", "")
+                "url": result.get("url", ""),
+                "snippet": result.get("content", "")
             })
 
         return sources
 
     except Exception as e:
-        print(f"Web search error: {e}")
-        # Возвращаем fallback источники при ошибке
-        return [{
-            "title": "Search unavailable",
-            "url": "",
-            "snippet": "Web search is currently unavailable"
-        }]
+        print(f"Tavily search error: {e}")
+        return []
 
 
 # Тест
