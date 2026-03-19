@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.provider_router import ProviderRouter
 from lib.rag_client import RAGClient
+from lib.web_search import search_web
 
 # Инициализация FastAPI
 app = FastAPI(title="V-AFE API", version="1.0.0")
@@ -61,7 +62,12 @@ class ChatResponse(BaseModel):
 async def chat(request: ChatRequest):
     """Основной endpoint для чата"""
     try:
+        # 1. Поиск источников в интернете (только для general режима)
         sources = []
+        if request.mode == "general" and not request.use_rag:
+            sources = search_web(request.message, max_results=3)
+
+        # 2. RAG поиск (если включён)
         if request.use_rag:
             sources = await rag_client.search(
                 query=request.message,
@@ -69,6 +75,7 @@ async def chat(request: ChatRequest):
                 top_k=3
             )
 
+        # 3. Генерация ответа через Gemini
         response = await provider_router.generate(
             prompt=request.message,
             context=sources,

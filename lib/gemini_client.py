@@ -110,13 +110,13 @@ class GeminiClient:
             }
         }
     
-    def _build_prompt(self, prompt: str, context: List[Dict] = None, mode: str = "general") -> str:
+    def _build_prompt(self, prompt: str, context: list = None, mode: str = "general") -> str:
         """
         Построение промпта с контекстом и системным промптом
 
         Args:
             prompt: Запрос пользователя
-            context: Контекст из базы знаний
+            context: Контекст из базы знаний или веб-источники
             mode: Режим (vafe, about, general)
 
         Returns:
@@ -125,8 +125,37 @@ class GeminiClient:
         # Получаем системный промпт для режима
         system_prompt = SYSTEM_PROMPTS.get(mode, SYSTEM_PROMPTS["general"])
 
-        # Если есть RAG контекст — добавляем
-        if context:
+        # Проверяем тип контекста (RAG или веб-источники)
+        is_web_context = context and len(context) > 0 and "url" in context[0]
+
+        if is_web_context:
+            # Веб-источники (DuckDuckGo)
+            context_text = "\n\n".join([
+                f"Источник {i}: {c.get('title', 'No title')}\n"
+                f"URL: {c.get('url', '')}\n"
+                f"Содержание: {c.get('snippet', '')}"
+                for i, c in enumerate(context[:3], 1)
+            ])
+
+            full_prompt = f"""{system_prompt}
+
+📚 Источники из интернета:
+{context_text}
+
+Используй эти источники для генерации ответа.
+В конце ответа укажи источники в формате:
+
+📚 Источники:
+1. [Название источника]({{URL}})
+2. [Название источника]({{URL}})
+3. [Название источника]({{URL}})
+
+Вопрос пользователя: {prompt}
+
+Ответ:"""
+
+        elif context:
+            # RAG контекст (vortex-afe)
             context_text = "\n\n".join([
                 f"[{c.get('concept', 'Unknown')}]\n"
                 f"Физика: {c.get('physics', '')}\n"
@@ -142,7 +171,9 @@ class GeminiClient:
 Вопрос пользователя: {prompt}
 
 Ответ:"""
+
         else:
+            # Без контекста
             full_prompt = f"""{system_prompt}
 
 Вопрос пользователя: {prompt}
