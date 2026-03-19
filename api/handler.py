@@ -4,6 +4,7 @@ V-AFE API — Vercel Handler
 """
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Optional
@@ -18,6 +19,15 @@ from lib.rag_client import RAGClient
 
 # Инициализация FastAPI
 app = FastAPI(title="V-AFE API", version="1.0.0")
+
+# CORS для всех источников (безопасно для serverless)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешить все домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Инициализация клиентов
 provider_router = ProviderRouter()
