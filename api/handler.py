@@ -88,7 +88,9 @@ async def chat(request: ChatRequest):
             "search_provider": "Tavily AI" if sources else "None (fallback)",
             "llm_model": response['model'],
             "mode": request.mode,
-            "rag_enabled": request.use_rag
+            "rag_enabled": request.use_rag,
+            "multi_language": True,
+            "interactive_links": True
         }
 
         return ChatResponse(
