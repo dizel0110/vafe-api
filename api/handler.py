@@ -20,10 +20,14 @@ from lib.rag_client import RAGClient
 # Инициализация FastAPI
 app = FastAPI(title="V-AFE API", version="1.0.0")
 
-# CORS для всех источников (безопасно для serverless)
+# CORS для конкретных доменов
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешить все домены
+    allow_origins=[
+        "http://localhost:5173",       # Локальная разработка
+        "https://dizel0110.github.io", # Production
+        "https://dizel0110.github.io",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
