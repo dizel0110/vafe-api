@@ -82,13 +82,22 @@ async def chat(request: ChatRequest):
             mode=request.mode
         )
 
+        # 4. Формируем metadata для инвесторов
+        metadata = {
+            "sources_count": len(sources),
+            "search_provider": "Tavily AI" if sources else "None (fallback)",
+            "llm_model": response['model'],
+            "mode": request.mode,
+            "rag_enabled": request.use_rag
+        }
+
         return ChatResponse(
             answer=response['answer'],
             sources=sources,
             provider=response['provider'],
             model=response['model'],
             mode=request.mode,
-            metadata=response.get('metadata', {})
+            metadata=metadata
         )
 
     except Exception as e:
